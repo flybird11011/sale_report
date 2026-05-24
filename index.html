@@ -356,6 +356,9 @@
                 if (!file1 || !file2) {
                     throw new Error('请先选择两个 Excel 文件。');
                 }
+                if (file1.name === file2.name) {
+                    throw new Error('源文件 1 和源文件 2 不能是同一个文件，请重新选择。');
+                }
 
                 formData.append('file1', file1);
                 formData.append('file2', file2);

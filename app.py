@@ -31,6 +31,14 @@ def save_mappings_to_file(mappings):
     with open(MAPPINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(mappings, f, ensure_ascii=False, indent=2)
 
+def require_columns(df, required_columns, label):
+    missing = [col for col in required_columns if col not in df.columns]
+    if missing:
+        return jsonify({
+            'error': f'{label} 缺少必要列: {", ".join(missing)}'
+        }), 400
+    return None
+
 TARGET_COLUMNS = [
     'Cutomer', 'Ship To', 'Product', 'Customer product', 'Item Cat', 'Drawing', 'Length', 'Cimalex',
     'Spec.', 'Alloy', 'kg', 'PC', 'Goods Mvt Date', 'AV', 'Metal', 'PCS/KG',
@@ -312,6 +320,13 @@ def upload_files():
     
     source1_df = pd.read_excel(file1)
     source2_df = pd.read_excel(file2)
+
+    error_response = require_columns(source1_df, ['Sales Document'], '源文件 1')
+    if error_response:
+        return error_response
+    error_response = require_columns(source2_df, ['Bill. Doc.', 'BillT'], '源文件 2')
+    if error_response:
+        return error_response
     
     source1_df = source1_df[source1_df['Sales Document'].notna()].reset_index(drop=True)
     
