@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.xlsx
+*.xls
+output/
+uploads/
+data/
+server.out.log
+server.err.log
+result.txt
+analysis_result.json
+.git/

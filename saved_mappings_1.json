@@ -1,0 +1,23 @@
+{
+  "Alloy": "Parsed_Alloy",
+  "Cimalex": "",
+  "Cutomer": "Sold To.1",
+  "Date": "Goods Mvt Date",
+  "Invoice": "",
+  "Item": "Item",
+  "Market": "",
+  "Metal": "",
+  "Net AV Total": "",
+  "Net Total": "",
+  "No.": "Sold To",
+  "PC": "Shipped Quantity",
+  "PCS/KG": "Shipped Qty Unit",
+  "Product": "Parsed_Product",
+  "Sales": "",
+  "Spec.": "Parsed_Spec",
+  "Total": "Net Value",
+  "Weight/PC": "",
+  "kg": "Shipped Quantity BUOM",
+  "美金汇率": "",
+  "Export": "Sold To Country"
+}

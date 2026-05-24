@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel 报表生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drag-over {
+            border-color: #2563eb !important;
+            background-color: #eff6ff !important;
+        }
+        .step-active {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+        }
+        .step-completed {
+            border-color: #16a34a;
+            background-color: #f0fdf4;
+        }
+        .mapping-row:hover {
+            background-color: #f8fafc;
+        }
+        select {
+            scrollbar-width: thin;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-800">
+    <div class="mx-auto max-w-7xl px-4 py-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Excel 报表生成工具</h1>
+            <p class="mt-2 text-sm text-slate-500">上传两个源文件，自动完成字段映射、预览和导出。</p>
+        </header>
+
+        <div class="mb-8 flex items-center justify-center gap-4">
+            <div id="step1-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-50 font-semibold text-blue-700">1</div>
+            <div id="line1" class="h-1 w-16 rounded bg-slate-300"></div>
+            <div id="step2-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">2</div>
+            <div id="line2" class="h-1 w-16 rounded bg-slate-300"></div>
+            <div id="step3-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">3</div>
+        </div>
+
+        <section id="step1" class="mb-6 rounded-2xl bg-white p-6 shadow-lg">
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-slate-800">步骤 1：上传源文件</h2>
+                <p class="mt-1 text-sm text-slate-500">支持拖拽或点击选择 Excel 文件。</p>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-600">源文件 1（发货数据）</label>
+                    <div id="dropzone1" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                        <div class="text-4xl">📄</div>
+                        <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 `EXPORT_*.xlsx`</p>
+                        <p id="filename1" class="mt-2 text-sm font-medium text-blue-600"></p>
+                    </div>
+                    <input id="file1" type="file" accept=".xlsx,.xls" class="hidden">
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-600">源文件 2（财务数据）</label>
+                    <div id="dropzone2" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                        <div class="text-4xl">💵</div>
+                        <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 `*-turnover.xlsx`</p>
+                        <p id="filename2" class="mt-2 text-sm font-medium text-blue-600"></p>
+                    </div>
+                    <input id="file2" type="file" accept=".xlsx,.xls" class="hidden">
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-center">
+                <button id="uploadBtn" disabled class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                    分析文件并继续
+                </button>
+            </div>
+        </section>
+
+        <section id="step2" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-slate-800">步骤 2：字段映射配置</h2>
+                <p class="mt-1 text-sm text-slate-500">系统会自动推荐映射，你可以继续微调。绿色表示已经匹配。</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="w-1/3 px-4 py-3 text-left font-semibold text-slate-600">目标字段</th>
+                            <th class="px-2 py-3 text-left font-semibold text-slate-600">↔</th>
+                            <th class="px-4 py-3 text-left font-semibold text-slate-600">源字段</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mappingTable"></tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="saveMappingsBtn" class="rounded-lg bg-purple-600 px-6 py-2 font-medium text-white transition hover:bg-purple-700">
+                    保存当前映射
+                </button>
+                <button id="resetMappingsBtn" class="rounded-lg bg-orange-500 px-6 py-2 font-medium text-white transition hover:bg-orange-600">
+                    重置为自动映射
+                </button>
+            </div>
+
+            <div class="mt-4 flex flex-wrap justify-center gap-3">
+                <button id="backToStep1" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                    返回上一步
+                </button>
+                <button id="previewBtn" class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700">
+                    预览数据
+                </button>
+            </div>
+        </section>
+
+        <section id="step3" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-slate-800">步骤 3：预览并生成报表</h2>
+                <p class="mt-1 text-sm text-slate-500">未匹配到 Delivery number 的行会被浅橙色高亮，并显示“未匹配 Delivery number”。</p>
+            </div>
+
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <label for="sheetName" class="text-sm font-medium text-slate-600">Sheet 名称</label>
+                    <input id="sheetName" type="text" value="ZRL" class="w-32 rounded border border-slate-300 px-3 py-1.5 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                </div>
+                <span id="totalCount" class="text-sm text-slate-500"></span>
+            </div>
+
+            <div class="mb-6 max-h-[30rem] overflow-auto rounded-xl border border-slate-200">
+                <table id="previewTable" class="w-full text-xs"></table>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3">
+                <button id="backToStep2" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                    返回修改映射
+                </button>
+                <button id="generateBtn" class="rounded-lg bg-emerald-600 px-10 py-3 text-lg font-medium text-white transition hover:bg-emerald-700">
+                    生成 Excel 报表
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const state = {
+            mappings: {},
+            source1Fields: [],
+            source2Fields: []
+        };
+
+        const dropzone1 = document.getElementById('dropzone1');
+        const dropzone2 = document.getElementById('dropzone2');
+        const file1Input = document.getElementById('file1');
+        const file2Input = document.getElementById('file2');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function displayValue(value) {
+            return value === null || value === undefined ? '' : String(value);
+        }
+
+        function updateUploadState() {
+            uploadBtn.disabled = !(file1Input.files.length && file2Input.files.length);
+        }
+
+        function bindDropzone(dropzone, input, filenameId) {
+            dropzone.addEventListener('click', () => input.click());
+            dropzone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                dropzone.classList.add('drag-over');
+            });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+            dropzone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                dropzone.classList.remove('drag-over');
+                if (!event.dataTransfer.files.length) return;
+                input.files = event.dataTransfer.files;
+                document.getElementById(filenameId).textContent = event.dataTransfer.files[0].name;
+                updateUploadState();
+            });
+            input.addEventListener('change', () => {
+                if (input.files.length) {
+                    document.getElementById(filenameId).textContent = input.files[0].name;
+                } else {
+                    document.getElementById(filenameId).textContent = '';
+                }
+                updateUploadState();
+            });
+        }
+
+        bindDropzone(dropzone1, file1Input, 'filename1');
+        bindDropzone(dropzone2, file2Input, 'filename2');
+
+        function setStep(activeStep) {
+            for (let step = 1; step <= 3; step += 1) {
+                const indicator = document.getElementById(`step${step}-indicator`);
+                indicator.classList.remove('step-active', 'step-completed', 'border-blue-500', 'bg-blue-50', 'text-blue-700', 'border-slate-300', 'bg-white', 'text-slate-500');
+                indicator.classList.add('border-slate-300', 'bg-white', 'text-slate-500');
+            }
+
+            const step1 = document.getElementById('step1-indicator');
+            const step2 = document.getElementById('step2-indicator');
+            const step3 = document.getElementById('step3-indicator');
+            const line1 = document.getElementById('line1');
+            const line2 = document.getElementById('line2');
+
+            line1.className = 'h-1 w-16 rounded bg-slate-300';
+            line2.className = 'h-1 w-16 rounded bg-slate-300';
+
+            if (activeStep >= 2) {
+                step1.classList.add('step-completed');
+                line1.classList.add('bg-emerald-500');
+            } else {
+                step1.classList.add('step-active');
+            }
+
+            if (activeStep >= 3) {
+                step2.classList.add('step-completed');
+                line2.classList.add('bg-emerald-500');
+            } else if (activeStep >= 2) {
+                step2.classList.add('step-active');
+            }
+
+            if (activeStep === 3) {
+                step3.classList.add('step-active');
+            }
+        }
+
+        function buildMappingTable(targetFields) {
+            const tbody = document.getElementById('mappingTable');
+            tbody.innerHTML = targetFields.map((target) => {
+                const selected = state.mappings[target] || '';
+                const hasMatch = Boolean(selected);
+
+                const source1Options = state.source1Fields
+                    .map((field) => `<option value="${escapeHtml(field)}"${selected === field ? ' selected' : ''}>${escapeHtml(field)}</option>`)
+                    .join('');
+
+                const source2Options = state.source2Fields
+                    .map((field) => `<option value="${escapeHtml(field)}"${selected === field ? ' selected' : ''}>${escapeHtml(field)}</option>`)
+                    .join('');
+
+                return `
+                    <tr class="mapping-row border-b ${hasMatch ? 'bg-emerald-50' : ''}">
+                        <td class="px-4 py-2 font-medium ${hasMatch ? 'text-emerald-700' : 'text-slate-700'}">${escapeHtml(target)}</td>
+                        <td class="px-2 py-2 text-slate-400">↔</td>
+                        <td class="px-4 py-2">
+                            <select data-target="${escapeHtml(target)}" class="w-full rounded border px-2 py-1.5 outline-none focus:ring-2 focus:ring-blue-200 ${hasMatch ? 'border-emerald-300 bg-emerald-50' : 'border-slate-300'}">
+                                <option value="">-- 不映射 --</option>
+                                <optgroup label="源文件 1">
+                                    ${source1Options}
+                                </optgroup>
+                                <optgroup label="源文件 2">
+                                    ${source2Options}
+                                </optgroup>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('#mappingTable select').forEach((select) => {
+                select.addEventListener('change', (event) => {
+                    const target = event.target.dataset.target;
+                    state.mappings[target] = event.target.value;
+
+                    const row = event.target.closest('tr');
+                    const titleCell = row.querySelector('td:first-child');
+                    if (event.target.value) {
+                        event.target.classList.remove('border-slate-300');
+                        event.target.classList.add('border-emerald-300', 'bg-emerald-50');
+                        row.classList.add('bg-emerald-50');
+                        titleCell.classList.add('text-emerald-700');
+                    } else {
+                        event.target.classList.remove('border-emerald-300', 'bg-emerald-50');
+                        event.target.classList.add('border-slate-300');
+                        row.classList.remove('bg-emerald-50');
+                        titleCell.classList.remove('text-emerald-700');
+                    }
+                });
+            });
+        }
+
+        function buildPreviewTable(rows) {
+            const table = document.getElementById('previewTable');
+            if (!rows || !rows.length) {
+                table.innerHTML = '<tbody><tr><td class="px-4 py-4 text-center text-slate-500">没有可预览的数据。</td></tr></tbody>';
+                return;
+            }
+
+            const headers = Object.keys(rows[0]).filter((key) => !key.startsWith('_'));
+            const hasStatusColumn = rows.some((row) => row._delivery_match_label);
+            if (hasStatusColumn && !headers.includes('匹配状态')) {
+                headers.push('匹配状态');
+            }
+
+            table.innerHTML = `
+                <thead class="sticky top-0 bg-slate-100">
+                    <tr>
+                        ${headers.map((header) => `<th class="whitespace-nowrap border-b border-slate-200 px-2 py-2 text-left font-semibold text-slate-600">${escapeHtml(header)}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map((row) => {
+                        const matched = row._delivery_matched !== false;
+                        return `
+                            <tr class="border-b ${matched ? 'hover:bg-slate-50' : 'bg-amber-50 hover:bg-amber-100'}">
+                                ${headers.map((header) => {
+                                    const value = header === '匹配状态'
+                                        ? (row._delivery_match_label || '')
+                                        : displayValue(row[header]);
+                                    return `<td class="max-w-xs whitespace-nowrap px-2 py-1.5 truncate" title="${escapeHtml(value)}">${escapeHtml(value)}</td>`;
+                                }).join('')}
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+        }
+
+        async function postJson(url, body) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response;
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '分析中...';
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+            try {
+                console.log('[upload] start');
+                const formData = new FormData();
+                const file1 = file1Input.files[0];
+                const file2 = file2Input.files[0];
+
+                if (!file1 || !file2) {
+                    throw new Error('请先选择两个 Excel 文件。');
+                }
+
+                formData.append('file1', file1);
+                formData.append('file2', file2);
+
+                console.log('[upload] sending request', file1.name, file2.name);
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                console.log('[upload] response received');
+                const data = await response.json();
+                console.log('[upload] parsed json', data);
+                state.source1Fields = data.source1_fields || [];
+                state.source2Fields = data.source2_fields || [];
+                state.mappings = data.auto_mappings || {};
+
+                buildMappingTable(data.target_fields || []);
+                setStep(2);
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+            } catch (error) {
+                console.error('[upload] failed', error);
+                alert(`上传失败：${error.message}`);
+            } finally {
+                clearTimeout(timeoutId);
+                uploadBtn.textContent = '分析文件并继续';
+                updateUploadState();
+            }
+        });
+
+        document.getElementById('saveMappingsBtn').addEventListener('click', async () => {
+            const button = document.getElementById('saveMappingsBtn');
+            const originalText = button.textContent;
+            button.textContent = '保存中...';
+            try {
+                await postJson('/api/save_mappings', { mappings: state.mappings });
+                button.textContent = '已保存';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 1500);
+                alert('映射配置已保存。下次打开会自动应用。');
+            } catch (error) {
+                alert(`保存失败：${error.message}`);
+                button.textContent = originalText;
+            }
+        });
+
+        document.getElementById('resetMappingsBtn').addEventListener('click', async () => {
+            if (!confirm('确认要重置映射配置吗？这会清除本地保存的映射。')) {
+                return;
+            }
+            try {
+                await postJson('/api/reset_mappings', {});
+                alert('已重置映射配置。请重新上传文件以生效。');
+            } catch (error) {
+                alert(`重置失败：${error.message}`);
+            }
+        });
+
+        document.getElementById('backToStep1').addEventListener('click', () => {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            setStep(1);
+        });
+
+        document.getElementById('previewBtn').addEventListener('click', async () => {
+            const button = document.getElementById('previewBtn');
+            const originalText = button.textContent;
+            button.textContent = '预览中...';
+            button.disabled = true;
+
+            try {
+                const response = await postJson('/api/preview', { mappings: state.mappings });
+                const data = await response.json();
+                buildPreviewTable(data.preview_data || []);
+                document.getElementById('totalCount').textContent = `共 ${data.total_count || 0} 条数据`;
+
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step3').classList.remove('hidden');
+                setStep(3);
+            } catch (error) {
+                alert(`预览失败：${error.message}`);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        });
+
+        document.getElementById('backToStep2').addEventListener('click', () => {
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            setStep(2);
+        });
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const button = document.getElementById('generateBtn');
+            const originalText = button.textContent;
+            button.textContent = '生成中...';
+            button.disabled = true;
+
+            try {
+                const sheetName = document.getElementById('sheetName').value || 'ZRL';
+                const response = await postJson('/api/generate', {
+                    mappings: state.mappings,
+                    sheet_name: sheetName
+                });
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `sales_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                alert('Excel 报表已生成，浏览器会开始下载。');
+            } catch (error) {
+                alert(`生成失败：${error.message}`);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        });
+
+        setStep(1);
+    </script>
+</body>
+</html>
