@@ -69,7 +69,10 @@ def split_material_description(desc):
         product = 'PDT'
 
     drawing = ''
-    if product == 'MPE' and mpe_idx >= 0:
+    acr_match = re.search(r'_(ACR[^_]+)_', desc)
+    if acr_match:
+        drawing = acr_match.group(1)
+    if product == 'MPE' and mpe_idx >= 0 and not drawing:
         rest = desc[mpe_idx + len('MPE'):]
         parts = rest.split('_')
         if len(parts) >= 2:
