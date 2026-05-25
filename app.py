@@ -69,18 +69,23 @@ def split_material_description(desc):
         product = 'PDT'
 
     drawing = ''
-    acr_match = re.search(r'_(ACR[^_]+)_', desc)
-    if acr_match:
-        drawing = acr_match.group(1)
+    special_drawing_match = re.search(r'_(ACR[^_]+|IGB[^_]+)_', desc)
+    if special_drawing_match:
+        drawing = special_drawing_match.group(1)
     if product == 'MPE' and mpe_idx >= 0 and not drawing:
         rest = desc[mpe_idx + len('MPE'):]
         parts = rest.split('_')
         if len(parts) >= 2:
             drawing = parts[1]
 
-    item_cat = f'{product}-ZN' if product and '-ZN' in desc else product
+    if special_drawing_match and special_drawing_match.group(1).startswith('IGB'):
+        item_cat = 'IP-BAR'
+    else:
+        item_cat = f'{product}-ZN' if product and '-ZN' in desc else product
 
-    if 'coil' in desc.lower():
+    if special_drawing_match:
+        length = 'coil'
+    elif 'coil' in desc.lower():
         length = 'coil'
     elif 'CTL' in desc:
         length = 'CTL'
