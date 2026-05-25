@@ -213,7 +213,7 @@ def build_report_row(row, source2_row, mappings, source1_df, source2_df, idx, ha
         new_row[target_col] = safe_convert_value(val)
 
     total_num = (net_total_num or 0) + (tax_amount_num or 0)
-    new_row['Total'] = total_num if (has_source2_match and (net_total_num is not None or tax_amount_num is not None)) else ''
+    new_row['Total'] = float(round(total_num, 2)) if (has_source2_match and (net_total_num is not None or tax_amount_num is not None)) else ''
     return new_row
 
 def summarize_source1_by_delivery(df):

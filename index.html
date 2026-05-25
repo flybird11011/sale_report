@@ -169,6 +169,17 @@
             return value === null || value === undefined ? '' : String(value);
         }
 
+        function formatPreviewValue(header, value) {
+            if (value === null || value === undefined || value === '') {
+                return '';
+            }
+            if (header === 'Total') {
+                const numeric = Number(value);
+                return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value);
+            }
+            return displayValue(value);
+        }
+
         function updateUploadState() {
             uploadBtn.disabled = !(file1Input.files.length && file2Input.files.length);
         }
@@ -318,7 +329,7 @@
                                 ${headers.map((header) => {
                                     const value = header === '匹配状态'
                                         ? (row._delivery_match_label || '')
-                                        : displayValue(row[header]);
+                                        : formatPreviewValue(header, row[header]);
                                     return `<td class="max-w-xs whitespace-nowrap px-2 py-1.5 truncate" title="${escapeHtml(value)}">${escapeHtml(value)}</td>`;
                                 }).join('')}
                             </tr>
