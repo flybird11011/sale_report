@@ -320,7 +320,11 @@ def auto_map_fields():
     # saved mapping file is present.
     if saved:
         merged = mappings.copy()
+        if 'Cimalex' in saved:
+            merged['Cimalex'] = saved.get('Cimalex', '')
         for key, value in saved.items():
+            if key == 'Cimalex':
+                continue
             if value not in [None, '']:
                 merged[key] = value
         if 'Shipped Quantity BUOM' in SOURCE1_FIELDS:
