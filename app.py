@@ -1,9 +1,10 @@
-﻿from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import pandas as pd
 import os
 import io
 import json
+import re
 from datetime import datetime
 
 app = Flask(__name__)
@@ -41,7 +42,7 @@ def require_columns(df, required_columns, label):
 
 TARGET_COLUMNS = [
     'Cutomer', 'Ship To', 'Product', 'Customer product', 'Item Cat', 'Drawing', 'Length', 'Cimalex',
-    'Spec.', 'Alloy', 'kg', 'PC', 'Goods Mvt Date', 'AV', 'Metal', 'PCS/KG',
+    'Spec.', 'Alloy', 'Material', 'Material Description', 'kg', 'PC', 'Goods Mvt Date', 'AV', 'Metal', 'PCS/KG',
     'Weight/PC', 'Unit Price', 'Total', 'Net AV', 'Net AV Total',
     'Net Total', 'Tax Amount', 'Export', 'Sales', 'Invoice', 'Invoice currency', 'Market', 'Delivery No.',
     '-', 'Trading', '月份', '美金汇率'
@@ -139,6 +140,13 @@ def safe_convert_number(val):
     try:
         return float(str(val).replace(',', '').strip())
     except:
+        text = str(val).strip().replace(',', '')
+        match = re.search(r'-?\d+(?:\.\d+)?', text)
+        if match:
+            try:
+                return float(match.group(0))
+            except:
+                return None
         return None
 
 def serialize_dataframe_rows(df):
@@ -249,11 +257,15 @@ def normalize_string(s):
 
 def auto_map_fields():
     saved = load_saved_mappings()
-    if saved:
-        return saved
-    
     mappings = {}
     source_fields = SOURCE1_FIELDS + SOURCE2_FIELDS
+
+    # Some business-critical numeric fields should always prefer the source 1
+    # columns that carry the actual delivery quantities.
+    if 'Shipped Quantity BUOM' in SOURCE1_FIELDS:
+        mappings['kg'] = 'Shipped Quantity BUOM'
+    if 'Shipped Quantity' in SOURCE1_FIELDS:
+        mappings['PC'] = 'Shipped Quantity'
     
     if 'Parsed_Product' in SOURCE1_FIELDS:
         mappings['Product'] = 'Parsed_Product'
@@ -302,6 +314,21 @@ def auto_map_fields():
                    any(normalize_string(p) in source_norm for p in pair):
                     if target not in mappings:
                         mappings[target] = source
+
+    # Keep user-saved mappings, but fill any missing fields with the current
+    # auto-detected defaults so newer fields do not disappear when an older
+    # saved mapping file is present.
+    if saved:
+        merged = mappings.copy()
+        for key, value in saved.items():
+            if value not in [None, '']:
+                merged[key] = value
+        if 'Shipped Quantity BUOM' in SOURCE1_FIELDS:
+            merged['kg'] = 'Shipped Quantity BUOM'
+        if 'Shipped Quantity' in SOURCE1_FIELDS:
+            merged['PC'] = 'Shipped Quantity'
+        return merged
+
     return mappings
 
 @app.route('/')
