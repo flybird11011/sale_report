@@ -24,137 +24,272 @@
         select {
             scrollbar-width: thin;
         }
+        .mode-button-active {
+            background: #0f172a;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-800">
     <div class="mx-auto max-w-7xl px-4 py-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold tracking-tight text-slate-900">Excel 报表生成工具</h1>
-            <p class="mt-2 text-sm text-slate-500">上传两个源文件，自动完成字段映射、预览和导出。</p>
+            <p class="mt-2 text-sm text-slate-500">两套独立流程共存：旧版双文件报表与月结三文件报表互不干扰。</p>
         </header>
 
-        <div class="mb-8 flex items-center justify-center gap-4">
-            <div id="step1-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-50 font-semibold text-blue-700">1</div>
-            <div id="line1" class="h-1 w-16 rounded bg-slate-300"></div>
-            <div id="step2-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">2</div>
-            <div id="line2" class="h-1 w-16 rounded bg-slate-300"></div>
-            <div id="step3-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">3</div>
+        <div class="mb-8 flex flex-wrap justify-center gap-3">
+            <button id="legacyModeBtn" class="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
+                旧版双文件报表
+            </button>
+            <button id="monthEndModeBtn" class="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
+                月结三文件报表
+            </button>
         </div>
 
-        <section id="step1" class="mb-6 rounded-2xl bg-white p-6 shadow-lg">
-            <div class="mb-4">
-                <h2 class="text-xl font-semibold text-slate-800">步骤 1：上传源文件</h2>
-                <p class="mt-1 text-sm text-slate-500">支持拖拽或点击选择 Excel 文件。</p>
+        <div id="legacyFlow">
+            <div class="mb-8 flex items-center justify-center gap-4">
+                <div id="legacy-step1-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-50 font-semibold text-blue-700">1</div>
+                <div id="legacy-line1" class="h-1 w-16 rounded bg-slate-300"></div>
+                <div id="legacy-step2-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">2</div>
+                <div id="legacy-line2" class="h-1 w-16 rounded bg-slate-300"></div>
+                <div id="legacy-step3-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">3</div>
             </div>
 
-            <div class="grid gap-6 md:grid-cols-2">
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-600">源文件 1（发货数据）</label>
-                    <div id="dropzone1" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
-                        <div class="text-4xl">📄</div>
-                        <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 `EXPORT_*.xlsx`</p>
-                        <p id="filename1" class="mt-2 text-sm font-medium text-blue-600"></p>
+            <section id="legacy-step1" class="mb-6 rounded-2xl bg-white p-6 shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-slate-800">步骤 1：上传源文件</h2>
+                    <p class="mt-1 text-sm text-slate-500">支持拖拽或点击选择 Excel 文件。</p>
+                </div>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-600">源文件 1（发货数据）</label>
+                        <div id="legacy-dropzone1" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                            <div class="text-4xl">📫</div>
+                            <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 `EXPORT_*.xlsx`</p>
+                            <p id="legacy-filename1" class="mt-2 text-sm font-medium text-blue-600"></p>
+                        </div>
+                        <input id="legacy-file1" type="file" accept=".xlsx,.xls" class="hidden">
                     </div>
-                    <input id="file1" type="file" accept=".xlsx,.xls" class="hidden">
-                </div>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-600">源文件 2（财务数据）</label>
-                    <div id="dropzone2" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
-                        <div class="text-4xl">💵</div>
-                        <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 `*-turnover.xlsx`</p>
-                        <p id="filename2" class="mt-2 text-sm font-medium text-blue-600"></p>
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-600">源文件 2（财务数据）</label>
+                        <div id="legacy-dropzone2" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                            <div class="text-4xl">📼</div>
+                            <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 `*-turnover.xlsx`</p>
+                            <p id="legacy-filename2" class="mt-2 text-sm font-medium text-blue-600"></p>
+                        </div>
+                        <input id="legacy-file2" type="file" accept=".xlsx,.xls" class="hidden">
                     </div>
-                    <input id="file2" type="file" accept=".xlsx,.xls" class="hidden">
                 </div>
-            </div>
 
-            <div class="mt-6 flex justify-center">
-                <button id="uploadBtn" disabled class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
-                    分析文件并继续
-                </button>
-            </div>
-        </section>
-
-        <section id="step2" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
-            <div class="mb-4">
-                <h2 class="text-xl font-semibold text-slate-800">步骤 2：字段映射配置</h2>
-                <p class="mt-1 text-sm text-slate-500">系统会自动推荐映射，你可以继续微调。绿色表示已经匹配。</p>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-100">
-                        <tr>
-                            <th class="w-1/3 px-4 py-3 text-left font-semibold text-slate-600">目标字段</th>
-                            <th class="px-2 py-3 text-left font-semibold text-slate-600">↔</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-600">源字段</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mappingTable"></tbody>
-                </table>
-            </div>
-
-            <div class="mt-6 flex flex-wrap justify-center gap-3">
-                <button id="saveMappingsBtn" class="rounded-lg bg-purple-600 px-6 py-2 font-medium text-white transition hover:bg-purple-700">
-                    保存当前映射
-                </button>
-                <button id="resetMappingsBtn" class="rounded-lg bg-orange-500 px-6 py-2 font-medium text-white transition hover:bg-orange-600">
-                    重置为自动映射
-                </button>
-            </div>
-
-            <div class="mt-4 flex flex-wrap justify-center gap-3">
-                <button id="backToStep1" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
-                    返回上一步
-                </button>
-                <button id="previewBtn" class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700">
-                    预览数据
-                </button>
-            </div>
-        </section>
-
-        <section id="step3" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
-            <div class="mb-4">
-                <h2 class="text-xl font-semibold text-slate-800">步骤 3：预览并生成报表</h2>
-                <p class="mt-1 text-sm text-slate-500">未匹配到 Delivery number 的行会被浅橙色高亮，并显示“未匹配 Delivery number”。</p>
-            </div>
-
-            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <label for="sheetName" class="text-sm font-medium text-slate-600">Sheet 名称</label>
-                    <input id="sheetName" type="text" value="ZRL" class="w-32 rounded border border-slate-300 px-3 py-1.5 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                <div class="mt-6 flex justify-center">
+                    <button id="legacyUploadBtn" disabled class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        分析文件并继续
+                    </button>
                 </div>
-                <span id="totalCount" class="text-sm text-slate-500"></span>
+            </section>
+
+            <section id="legacy-step2" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-slate-800">步骤 2：字段映射配置</h2>
+                    <p class="mt-1 text-sm text-slate-500">系统会自动推荐映射，你可以继续微调。绿色表示已经匹配。</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="w-1/3 px-4 py-3 text-left font-semibold text-slate-600">目标字段</th>
+                                <th class="px-2 py-3 text-left font-semibold text-slate-600">→</th>
+                                <th class="px-4 py-3 text-left font-semibold text-slate-600">源字段</th>
+                            </tr>
+                        </thead>
+                        <tbody id="legacy-mappingTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6 flex flex-wrap justify-center gap-3">
+                    <button id="legacySaveMappingsBtn" class="rounded-lg bg-purple-600 px-6 py-2 font-medium text-white transition hover:bg-purple-700">
+                        保存当前映射
+                    </button>
+                    <button id="legacyResetMappingsBtn" class="rounded-lg bg-orange-500 px-6 py-2 font-medium text-white transition hover:bg-orange-600">
+                        重置为自动映射
+                    </button>
+                </div>
+
+                <div class="mt-4 flex flex-wrap justify-center gap-3">
+                    <button id="legacyBackToStep1" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                        返回上一步
+                    </button>
+                    <button id="legacyPreviewBtn" class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700">
+                        预览数据
+                    </button>
+                </div>
+            </section>
+
+            <section id="legacy-step3" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-slate-800">步骤 3：预览并生成报表</h2>
+                    <p class="mt-1 text-sm text-slate-500">未匹配到 Delivery number 的行会以浅橙色高亮，并显示提示文本。</p>
+                </div>
+
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="legacySheetName" class="text-sm font-medium text-slate-600">Sheet 名称</label>
+                        <input id="legacySheetName" type="text" value="ZRL" class="w-32 rounded border border-slate-300 px-3 py-1.5 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <span id="legacyTotalCount" class="text-sm text-slate-500"></span>
+                </div>
+
+                <div class="mb-6 max-h-[30rem] overflow-auto rounded-xl border border-slate-200">
+                    <table id="legacyPreviewTable" class="w-full text-xs"></table>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button id="legacyBackToStep2" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                        返回修改映射
+                    </button>
+                    <button id="legacyGenerateBtn" class="rounded-lg bg-emerald-600 px-10 py-3 text-lg font-medium text-white transition hover:bg-emerald-700">
+                        生成 Excel 报表
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <div id="monthEndFlow" class="hidden">
+            <div class="mb-8 flex items-center justify-center gap-4">
+                <div id="monthEnd-step1-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-50 font-semibold text-blue-700">1</div>
+                <div id="monthEnd-line1" class="h-1 w-16 rounded bg-slate-300"></div>
+                <div id="monthEnd-step2-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">2</div>
+                <div id="monthEnd-line2" class="h-1 w-16 rounded bg-slate-300"></div>
+                <div id="monthEnd-step3-indicator" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 bg-white font-semibold text-slate-500">3</div>
             </div>
 
-            <div class="mb-6 max-h-[30rem] overflow-auto rounded-xl border border-slate-200">
-                <table id="previewTable" class="w-full text-xs"></table>
-            </div>
+            <section id="monthEnd-step1" class="mb-6 rounded-2xl bg-white p-6 shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-slate-800">步骤 1：上传三份月结源文件</h2>
+                    <p class="mt-1 text-sm text-slate-500">A / B / C 三个文件分别对应不同数据源，上传后会进入独立的三文件映射流程。</p>
+                </div>
 
-            <div class="flex flex-wrap justify-center gap-3">
-                <button id="backToStep2" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
-                    返回修改映射
-                </button>
-                <button id="generateBtn" class="rounded-lg bg-emerald-600 px-10 py-3 text-lg font-medium text-white transition hover:bg-emerald-700">
-                    生成 Excel 报表
-                </button>
-            </div>
-        </section>
+                <div class="grid gap-6 lg:grid-cols-3">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-600">文件 A</label>
+                        <div id="monthEnd-dropzoneA" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                            <div class="text-4xl">🅰️</div>
+                            <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 A 文件</p>
+                            <p id="monthEnd-filenameA" class="mt-2 text-sm font-medium text-blue-600"></p>
+                        </div>
+                        <input id="monthEnd-fileA" type="file" accept=".xlsx,.xls" class="hidden">
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-600">文件 B</label>
+                        <div id="monthEnd-dropzoneB" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                            <div class="text-4xl">🅱️</div>
+                            <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 B 文件</p>
+                            <p id="monthEnd-filenameB" class="mt-2 text-sm font-medium text-blue-600"></p>
+                        </div>
+                        <input id="monthEnd-fileB" type="file" accept=".xlsx,.xls" class="hidden">
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-600">文件 C</label>
+                        <div id="monthEnd-dropzoneC" class="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition hover:border-blue-400">
+                            <div class="text-4xl">🆑</div>
+                            <p class="mt-2 text-sm text-slate-500">点击或拖拽上传 C 文件</p>
+                            <p id="monthEnd-filenameC" class="mt-2 text-sm font-medium text-blue-600"></p>
+                        </div>
+                        <input id="monthEnd-fileC" type="file" accept=".xlsx,.xls" class="hidden">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-center">
+                    <button id="monthEndUploadBtn" disabled class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        分析文件并继续
+                    </button>
+                </div>
+            </section>
+
+            <section id="monthEnd-step2" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-slate-800">步骤 2：三文件字段映射</h2>
+                    <p class="mt-1 text-sm text-slate-500">从 A / B / C 三份源文件中选择字段，映射表会按目标字段逐行展示。</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="w-1/3 px-4 py-3 text-left font-semibold text-slate-600">目标字段</th>
+                                <th class="px-2 py-3 text-left font-semibold text-slate-600">→</th>
+                                <th class="px-4 py-3 text-left font-semibold text-slate-600">源字段</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthEnd-mappingTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 flex flex-wrap justify-center gap-3">
+                    <button id="monthEndBackToStep1" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                        返回上一步
+                    </button>
+                    <button id="monthEndPreviewBtn" class="rounded-lg bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700">
+                        预览数据
+                    </button>
+                </div>
+            </section>
+
+            <section id="monthEnd-step3" class="mb-6 hidden rounded-2xl bg-white p-6 shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-slate-800">步骤 3：预览并生成月结 Excel</h2>
+                    <p class="mt-1 text-sm text-slate-500">这里展示的是月结报表的预览结果，确认无误后即可下载生成文件。</p>
+                </div>
+
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="monthEndSheetName" class="text-sm font-medium text-slate-600">Sheet 名称</label>
+                        <input id="monthEndSheetName" type="text" value="Month End" class="w-40 rounded border border-slate-300 px-3 py-1.5 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <span id="monthEndTotalCount" class="text-sm text-slate-500"></span>
+                </div>
+
+                <div class="mb-6 max-h-[30rem] overflow-auto rounded-xl border border-slate-200">
+                    <table id="monthEndPreviewTable" class="w-full text-xs"></table>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button id="monthEndBackToStep2" class="rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                        返回修改映射
+                    </button>
+                    <button id="monthEndGenerateBtn" class="rounded-lg bg-emerald-600 px-10 py-3 text-lg font-medium text-white transition hover:bg-emerald-700">
+                        下载月结 Excel
+                    </button>
+                </div>
+            </section>
+        </div>
     </div>
 
     <script>
-        const state = {
+        const legacyState = {
             mappings: {},
             source1Fields: [],
-            source2Fields: []
+            source2Fields: [],
+            targetFields: []
         };
 
-        const dropzone1 = document.getElementById('dropzone1');
-        const dropzone2 = document.getElementById('dropzone2');
-        const file1Input = document.getElementById('file1');
-        const file2Input = document.getElementById('file2');
-        const uploadBtn = document.getElementById('uploadBtn');
+        const monthEndState = {
+            mappings: {},
+            sourceAFields: [],
+            sourceBFields: [],
+            sourceCFields: [],
+            targetFields: []
+        };
+
+        const flowState = {
+            current: 'legacy'
+        };
 
         function escapeHtml(value) {
             return String(value)
@@ -180,50 +315,26 @@
             return displayValue(value);
         }
 
-        function updateUploadState() {
-            uploadBtn.disabled = !(file1Input.files.length && file2Input.files.length);
+        function setMode(mode) {
+            flowState.current = mode;
+            document.getElementById('legacyFlow').classList.toggle('hidden', mode !== 'legacy');
+            document.getElementById('monthEndFlow').classList.toggle('hidden', mode !== 'monthEnd');
+            document.getElementById('legacyModeBtn').classList.toggle('mode-button-active', mode === 'legacy');
+            document.getElementById('monthEndModeBtn').classList.toggle('mode-button-active', mode === 'monthEnd');
         }
 
-        function bindDropzone(dropzone, input, filenameId) {
-            dropzone.addEventListener('click', () => input.click());
-            dropzone.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                dropzone.classList.add('drag-over');
-            });
-            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-            dropzone.addEventListener('drop', (event) => {
-                event.preventDefault();
-                dropzone.classList.remove('drag-over');
-                if (!event.dataTransfer.files.length) return;
-                input.files = event.dataTransfer.files;
-                document.getElementById(filenameId).textContent = event.dataTransfer.files[0].name;
-                updateUploadState();
-            });
-            input.addEventListener('change', () => {
-                if (input.files.length) {
-                    document.getElementById(filenameId).textContent = input.files[0].name;
-                } else {
-                    document.getElementById(filenameId).textContent = '';
-                }
-                updateUploadState();
-            });
-        }
-
-        bindDropzone(dropzone1, file1Input, 'filename1');
-        bindDropzone(dropzone2, file2Input, 'filename2');
-
-        function setStep(activeStep) {
+        function setStep(prefix, activeStep) {
             for (let step = 1; step <= 3; step += 1) {
-                const indicator = document.getElementById(`step${step}-indicator`);
+                const indicator = document.getElementById(`${prefix}-step${step}-indicator`);
                 indicator.classList.remove('step-active', 'step-completed', 'border-blue-500', 'bg-blue-50', 'text-blue-700', 'border-slate-300', 'bg-white', 'text-slate-500');
                 indicator.classList.add('border-slate-300', 'bg-white', 'text-slate-500');
             }
 
-            const step1 = document.getElementById('step1-indicator');
-            const step2 = document.getElementById('step2-indicator');
-            const step3 = document.getElementById('step3-indicator');
-            const line1 = document.getElementById('line1');
-            const line2 = document.getElementById('line2');
+            const step1 = document.getElementById(`${prefix}-step1-indicator`);
+            const step2 = document.getElementById(`${prefix}-step2-indicator`);
+            const step3 = document.getElementById(`${prefix}-step3-indicator`);
+            const line1 = document.getElementById(`${prefix}-line1`);
+            const line2 = document.getElementById(`${prefix}-line2`);
 
             line1.className = 'h-1 w-16 rounded bg-slate-300';
             line2.className = 'h-1 w-16 rounded bg-slate-300';
@@ -247,40 +358,58 @@
             }
         }
 
-        function buildMappingTable(targetFields) {
-            const tbody = document.getElementById('mappingTable');
-            tbody.innerHTML = targetFields.map((target) => {
+        function bindDropzone(dropzone, input, filenameId, onChange) {
+            dropzone.addEventListener('click', () => input.click());
+            dropzone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                dropzone.classList.add('drag-over');
+            });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+            dropzone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                dropzone.classList.remove('drag-over');
+                if (!event.dataTransfer.files.length) return;
+                input.files = event.dataTransfer.files;
+                document.getElementById(filenameId).textContent = event.dataTransfer.files[0].name;
+                onChange();
+            });
+            input.addEventListener('change', () => {
+                document.getElementById(filenameId).textContent = input.files.length ? input.files[0].name : '';
+                onChange();
+            });
+        }
+
+        function renderMappingTable(tableId, state, sourceGroups) {
+            const tbody = document.getElementById(tableId);
+            tbody.innerHTML = state.targetFields.map((target) => {
                 const selected = state.mappings[target] || '';
                 const hasMatch = Boolean(selected);
-
-                const source1Options = state.source1Fields
-                    .map((field) => `<option value="${escapeHtml(field)}"${selected === field ? ' selected' : ''}>${escapeHtml(field)}</option>`)
-                    .join('');
-
-                const source2Options = state.source2Fields
-                    .map((field) => `<option value="${escapeHtml(field)}"${selected === field ? ' selected' : ''}>${escapeHtml(field)}</option>`)
-                    .join('');
+                const optionGroups = sourceGroups.map(({ label, fields }) => {
+                    const options = fields
+                        .map((field) => `<option value="${escapeHtml(field)}"${selected === field ? ' selected' : ''}>${escapeHtml(field)}</option>`)
+                        .join('');
+                    return `
+                        <optgroup label="${escapeHtml(label)}">
+                            ${options}
+                        </optgroup>
+                    `;
+                }).join('');
 
                 return `
                     <tr class="mapping-row border-b ${hasMatch ? 'bg-emerald-50' : ''}">
                         <td class="px-4 py-2 font-medium ${hasMatch ? 'text-emerald-700' : 'text-slate-700'}">${escapeHtml(target)}</td>
-                        <td class="px-2 py-2 text-slate-400">↔</td>
+                        <td class="px-2 py-2 text-slate-400">→</td>
                         <td class="px-4 py-2">
                             <select data-target="${escapeHtml(target)}" class="w-full rounded border px-2 py-1.5 outline-none focus:ring-2 focus:ring-blue-200 ${hasMatch ? 'border-emerald-300 bg-emerald-50' : 'border-slate-300'}">
                                 <option value="">-- 不映射 --</option>
-                                <optgroup label="源文件 1">
-                                    ${source1Options}
-                                </optgroup>
-                                <optgroup label="源文件 2">
-                                    ${source2Options}
-                                </optgroup>
+                                ${optionGroups}
                             </select>
                         </td>
                     </tr>
                 `;
             }).join('');
 
-            document.querySelectorAll('#mappingTable select').forEach((select) => {
+            tbody.querySelectorAll('select').forEach((select) => {
                 select.addEventListener('change', (event) => {
                     const target = event.target.dataset.target;
                     state.mappings[target] = event.target.value;
@@ -302,17 +431,18 @@
             });
         }
 
-        function buildPreviewTable(rows) {
-            const table = document.getElementById('previewTable');
+        function buildPreviewTable(tableId, rows, statusColumnLabel) {
+            const table = document.getElementById(tableId);
             if (!rows || !rows.length) {
                 table.innerHTML = '<tbody><tr><td class="px-4 py-4 text-center text-slate-500">没有可预览的数据。</td></tr></tbody>';
                 return;
             }
 
             const headers = Object.keys(rows[0]).filter((key) => !key.startsWith('_'));
-            const hasStatusColumn = rows.some((row) => row._delivery_match_label);
-            if (hasStatusColumn && !headers.includes('匹配状态')) {
-                headers.push('匹配状态');
+            const hasStatusColumn = rows.some((row) => row._delivery_match_label || row._status_label);
+            const label = statusColumnLabel || '匹配状态';
+            if (hasStatusColumn && !headers.includes(label)) {
+                headers.push(label);
             }
 
             table.innerHTML = `
@@ -327,8 +457,8 @@
                         return `
                             <tr class="border-b ${matched ? 'hover:bg-slate-50' : 'bg-amber-50 hover:bg-amber-100'}">
                                 ${headers.map((header) => {
-                                    const value = header === '匹配状态'
-                                        ? (row._delivery_match_label || '')
+                                    const value = header === label
+                                        ? (row._delivery_match_label || row._status_label || '')
                                         : formatPreviewValue(header, row[header]);
                                     return `<td class="max-w-xs whitespace-nowrap px-2 py-1.5 truncate" title="${escapeHtml(value)}">${escapeHtml(value)}</td>`;
                                 }).join('')}
@@ -351,153 +481,309 @@
             return response;
         }
 
-        uploadBtn.addEventListener('click', async () => {
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = '分析中...';
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 60000);
+        function updateLegacyUploadState() {
+            const file1Input = document.getElementById('legacy-file1');
+            const file2Input = document.getElementById('legacy-file2');
+            document.getElementById('legacyUploadBtn').disabled = !(file1Input.files.length && file2Input.files.length);
+        }
 
-            try {
-                console.log('[upload] start');
-                const formData = new FormData();
-                const file1 = file1Input.files[0];
-                const file2 = file2Input.files[0];
+        function updateMonthEndUploadState() {
+            const fileA = document.getElementById('monthEnd-fileA');
+            const fileB = document.getElementById('monthEnd-fileB');
+            const fileC = document.getElementById('monthEnd-fileC');
+            document.getElementById('monthEndUploadBtn').disabled = !(fileA.files.length && fileB.files.length && fileC.files.length);
+        }
 
-                if (!file1 || !file2) {
-                    throw new Error('请先选择两个 Excel 文件。');
-                }
-                if (file1.name === file2.name) {
-                    throw new Error('源文件 1 和源文件 2 不能是同一个文件，请重新选择。');
-                }
+        function wireLegacyFlow() {
+            const dropzone1 = document.getElementById('legacy-dropzone1');
+            const dropzone2 = document.getElementById('legacy-dropzone2');
+            const file1Input = document.getElementById('legacy-file1');
+            const file2Input = document.getElementById('legacy-file2');
 
-                formData.append('file1', file1);
-                formData.append('file2', file2);
+            bindDropzone(dropzone1, file1Input, 'legacy-filename1', updateLegacyUploadState);
+            bindDropzone(dropzone2, file2Input, 'legacy-filename2', updateLegacyUploadState);
 
-                console.log('[upload] sending request', file1.name, file2.name);
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData,
-                    signal: controller.signal
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+            document.getElementById('legacyUploadBtn').addEventListener('click', async () => {
+                const button = document.getElementById('legacyUploadBtn');
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '分析中...';
 
-                console.log('[upload] response received');
-                const data = await response.json();
-                console.log('[upload] parsed json', data);
-                state.source1Fields = data.source1_fields || [];
-                state.source2Fields = data.source2_fields || [];
-                state.mappings = data.auto_mappings || {};
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-                buildMappingTable(data.target_fields || []);
-                setStep(2);
-                document.getElementById('step1').classList.add('hidden');
-                document.getElementById('step2').classList.remove('hidden');
-            } catch (error) {
-                console.error('[upload] failed', error);
-                alert(`上传失败：${error.message}`);
-            } finally {
-                clearTimeout(timeoutId);
-                uploadBtn.textContent = '分析文件并继续';
-                updateUploadState();
-            }
-        });
+                try {
+                    const file1 = file1Input.files[0];
+                    const file2 = file2Input.files[0];
+                    if (!file1 || !file2) {
+                        throw new Error('请先选择两个 Excel 文件。');
+                    }
+                    if (file1.name === file2.name) {
+                        throw new Error('源文件 1 和源文件 2 不能是同一个文件，请重新选择。');
+                    }
 
-        document.getElementById('saveMappingsBtn').addEventListener('click', async () => {
-            const button = document.getElementById('saveMappingsBtn');
-            const originalText = button.textContent;
-            button.textContent = '保存中...';
-            try {
-                await postJson('/api/save_mappings', { mappings: state.mappings });
-                button.textContent = '已保存';
-                setTimeout(() => {
+                    const formData = new FormData();
+                    formData.append('file1', file1);
+                    formData.append('file2', file2);
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData,
+                        signal: controller.signal
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    legacyState.source1Fields = data.source1_fields || [];
+                    legacyState.source2Fields = data.source2_fields || [];
+                    legacyState.targetFields = data.target_fields || [];
+                    legacyState.mappings = data.auto_mappings || {};
+
+                    renderMappingTable('legacy-mappingTable', legacyState, [
+                        { label: '源文件 1', fields: legacyState.source1Fields },
+                        { label: '源文件 2', fields: legacyState.source2Fields }
+                    ]);
+                    setStep('legacy', 2);
+                    document.getElementById('legacy-step1').classList.add('hidden');
+                    document.getElementById('legacy-step2').classList.remove('hidden');
+                } catch (error) {
+                    alert(`上传失败：${error.message}`);
+                } finally {
+                    clearTimeout(timeoutId);
                     button.textContent = originalText;
-                }, 1500);
-                alert('映射配置已保存。下次打开会自动应用。');
-            } catch (error) {
-                alert(`保存失败：${error.message}`);
-                button.textContent = originalText;
-            }
-        });
+                    updateLegacyUploadState();
+                }
+            });
 
-        document.getElementById('resetMappingsBtn').addEventListener('click', async () => {
-            if (!confirm('确认要重置映射配置吗？这会清除本地保存的映射。')) {
-                return;
-            }
-            try {
-                await postJson('/api/reset_mappings', {});
-                alert('已重置映射配置。请重新上传文件以生效。');
-            } catch (error) {
-                alert(`重置失败：${error.message}`);
-            }
-        });
+            document.getElementById('legacySaveMappingsBtn').addEventListener('click', async () => {
+                const button = document.getElementById('legacySaveMappingsBtn');
+                const originalText = button.textContent;
+                button.textContent = '保存中...';
+                try {
+                    await postJson('/api/save_mappings', { mappings: legacyState.mappings });
+                    button.textContent = '已保存';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 1500);
+                    alert('映射配置已保存。下次打开会自动应用。');
+                } catch (error) {
+                    alert(`保存失败：${error.message}`);
+                    button.textContent = originalText;
+                }
+            });
 
-        document.getElementById('backToStep1').addEventListener('click', () => {
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step1').classList.remove('hidden');
-            setStep(1);
-        });
+            document.getElementById('legacyResetMappingsBtn').addEventListener('click', async () => {
+                if (!confirm('确认要重置映射配置吗？这会清除本地保存的映射。')) {
+                    return;
+                }
+                try {
+                    await postJson('/api/reset_mappings', {});
+                    alert('已重置映射配置。请重新上传文件以生效。');
+                } catch (error) {
+                    alert(`重置失败：${error.message}`);
+                }
+            });
 
-        document.getElementById('previewBtn').addEventListener('click', async () => {
-            const button = document.getElementById('previewBtn');
-            const originalText = button.textContent;
-            button.textContent = '预览中...';
-            button.disabled = true;
+            document.getElementById('legacyBackToStep1').addEventListener('click', () => {
+                document.getElementById('legacy-step2').classList.add('hidden');
+                document.getElementById('legacy-step1').classList.remove('hidden');
+                setStep('legacy', 1);
+            });
 
-            try {
-                const response = await postJson('/api/preview', { mappings: state.mappings });
-                const data = await response.json();
-                buildPreviewTable(data.preview_data || []);
-                document.getElementById('totalCount').textContent = `共 ${data.total_count || 0} 条数据`;
+            document.getElementById('legacyPreviewBtn').addEventListener('click', async () => {
+                const button = document.getElementById('legacyPreviewBtn');
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '预览中...';
 
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('step3').classList.remove('hidden');
-                setStep(3);
-            } catch (error) {
-                alert(`预览失败：${error.message}`);
-            } finally {
-                button.textContent = originalText;
-                button.disabled = false;
-            }
-        });
+                try {
+                    const response = await postJson('/api/preview', { mappings: legacyState.mappings });
+                    const data = await response.json();
+                    buildPreviewTable('legacyPreviewTable', data.preview_data || [], '匹配状态');
+                    document.getElementById('legacyTotalCount').textContent = `共 ${data.total_count || 0} 条数据`;
+                    document.getElementById('legacy-step2').classList.add('hidden');
+                    document.getElementById('legacy-step3').classList.remove('hidden');
+                    setStep('legacy', 3);
+                } catch (error) {
+                    alert(`预览失败：${error.message}`);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            });
 
-        document.getElementById('backToStep2').addEventListener('click', () => {
-            document.getElementById('step3').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
-            setStep(2);
-        });
+            document.getElementById('legacyBackToStep2').addEventListener('click', () => {
+                document.getElementById('legacy-step3').classList.add('hidden');
+                document.getElementById('legacy-step2').classList.remove('hidden');
+                setStep('legacy', 2);
+            });
 
-        document.getElementById('generateBtn').addEventListener('click', async () => {
-            const button = document.getElementById('generateBtn');
-            const originalText = button.textContent;
-            button.textContent = '生成中...';
-            button.disabled = true;
+            document.getElementById('legacyGenerateBtn').addEventListener('click', async () => {
+                const button = document.getElementById('legacyGenerateBtn');
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '生成中...';
 
-            try {
-                const sheetName = document.getElementById('sheetName').value || 'ZRL';
-                const response = await postJson('/api/generate', {
-                    mappings: state.mappings,
-                    sheet_name: sheetName
-                });
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `sales_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
-                link.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                alert('Excel 报表已生成，浏览器会开始下载。');
-            } catch (error) {
-                alert(`生成失败：${error.message}`);
-            } finally {
-                button.textContent = originalText;
-                button.disabled = false;
-            }
-        });
+                try {
+                    const sheetName = document.getElementById('legacySheetName').value || 'ZRL';
+                    const response = await postJson('/api/generate', {
+                        mappings: legacyState.mappings,
+                        sheet_name: sheetName
+                    });
+                    const blob = await response.blob();
+                    downloadBlob(blob, `sales_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                    alert('Excel 报表已生成，浏览器会开始下载。');
+                } catch (error) {
+                    alert(`生成失败：${error.message}`);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            });
+        }
 
-        setStep(1);
+        function wireMonthEndFlow() {
+            const fileAInput = document.getElementById('monthEnd-fileA');
+            const fileBInput = document.getElementById('monthEnd-fileB');
+            const fileCInput = document.getElementById('monthEnd-fileC');
+
+            bindDropzone(document.getElementById('monthEnd-dropzoneA'), fileAInput, 'monthEnd-filenameA', updateMonthEndUploadState);
+            bindDropzone(document.getElementById('monthEnd-dropzoneB'), fileBInput, 'monthEnd-filenameB', updateMonthEndUploadState);
+            bindDropzone(document.getElementById('monthEnd-dropzoneC'), fileCInput, 'monthEnd-filenameC', updateMonthEndUploadState);
+
+            document.getElementById('monthEndUploadBtn').addEventListener('click', async () => {
+                const button = document.getElementById('monthEndUploadBtn');
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '分析中...';
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+                try {
+                    const fileA = fileAInput.files[0];
+                    const fileB = fileBInput.files[0];
+                    const fileC = fileCInput.files[0];
+                    if (!fileA || !fileB || !fileC) {
+                        throw new Error('请先选择 A、B、C 三个 Excel 文件。');
+                    }
+
+                    const formData = new FormData();
+                    formData.append('fileA', fileA);
+                    formData.append('fileB', fileB);
+                    formData.append('fileC', fileC);
+
+                    const response = await fetch('/api/month_end/upload', {
+                        method: 'POST',
+                        body: formData,
+                        signal: controller.signal
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    monthEndState.sourceAFields = data.sourceA_fields || [];
+                    monthEndState.sourceBFields = data.sourceB_fields || [];
+                    monthEndState.sourceCFields = data.sourceC_fields || [];
+                    monthEndState.targetFields = data.target_fields || [];
+                    monthEndState.mappings = data.auto_mappings || {};
+
+                    renderMappingTable('monthEnd-mappingTable', monthEndState, [
+                        { label: '文件 A', fields: monthEndState.sourceAFields },
+                        { label: '文件 B', fields: monthEndState.sourceBFields },
+                        { label: '文件 C', fields: monthEndState.sourceCFields }
+                    ]);
+                    setStep('monthEnd', 2);
+                    document.getElementById('monthEnd-step1').classList.add('hidden');
+                    document.getElementById('monthEnd-step2').classList.remove('hidden');
+                } catch (error) {
+                    alert(`上传失败：${error.message}`);
+                } finally {
+                    clearTimeout(timeoutId);
+                    button.textContent = originalText;
+                    updateMonthEndUploadState();
+                }
+            });
+
+            document.getElementById('monthEndBackToStep1').addEventListener('click', () => {
+                document.getElementById('monthEnd-step2').classList.add('hidden');
+                document.getElementById('monthEnd-step1').classList.remove('hidden');
+                setStep('monthEnd', 1);
+            });
+
+            document.getElementById('monthEndPreviewBtn').addEventListener('click', async () => {
+                const button = document.getElementById('monthEndPreviewBtn');
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '预览中...';
+
+                try {
+                    const response = await postJson('/api/month_end/preview', { mappings: monthEndState.mappings });
+                    const data = await response.json();
+                    buildPreviewTable('monthEndPreviewTable', data.preview_data || [], '状态');
+                    document.getElementById('monthEndTotalCount').textContent = `共 ${data.total_count || 0} 条数据`;
+                    document.getElementById('monthEnd-step2').classList.add('hidden');
+                    document.getElementById('monthEnd-step3').classList.remove('hidden');
+                    setStep('monthEnd', 3);
+                } catch (error) {
+                    alert(`预览失败：${error.message}`);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            });
+
+            document.getElementById('monthEndBackToStep2').addEventListener('click', () => {
+                document.getElementById('monthEnd-step3').classList.add('hidden');
+                document.getElementById('monthEnd-step2').classList.remove('hidden');
+                setStep('monthEnd', 2);
+            });
+
+            document.getElementById('monthEndGenerateBtn').addEventListener('click', async () => {
+                const button = document.getElementById('monthEndGenerateBtn');
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '生成中...';
+
+                try {
+                    const sheetName = document.getElementById('monthEndSheetName').value || 'Month End';
+                    const response = await postJson('/api/month_end/generate', {
+                        mappings: monthEndState.mappings,
+                        sheet_name: sheetName
+                    });
+                    const blob = await response.blob();
+                    downloadBlob(blob, `month_end_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                    alert('月结 Excel 已生成，浏览器会开始下载。');
+                } catch (error) {
+                    alert(`生成失败：${error.message}`);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            });
+        }
+
+        document.getElementById('legacyModeBtn').addEventListener('click', () => setMode('legacy'));
+        document.getElementById('monthEndModeBtn').addEventListener('click', () => setMode('monthEnd'));
+
+        wireLegacyFlow();
+        wireMonthEndFlow();
+
+        setMode('legacy');
+        setStep('legacy', 1);
+        setStep('monthEnd', 1);
     </script>
 </body>
 </html>
