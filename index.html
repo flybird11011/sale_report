@@ -694,9 +694,9 @@
                     }
 
                     const data = await response.json();
-                    monthEndState.sourceAFields = data.sourceA_fields || [];
-                    monthEndState.sourceBFields = data.sourceB_fields || [];
-                    monthEndState.sourceCFields = data.sourceC_fields || [];
+                    monthEndState.sourceAFields = data.source_a_fields || data.sourceA_fields || [];
+                    monthEndState.sourceBFields = data.source_b_fields || data.sourceB_fields || [];
+                    monthEndState.sourceCFields = data.source_c_fields || data.sourceC_fields || [];
                     monthEndState.targetFields = data.target_fields || [];
                     monthEndState.mappings = data.auto_mappings || {};
 
