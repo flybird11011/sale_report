@@ -53,6 +53,19 @@ SOURCE2_FIELDS = []
 source1_df = None
 source2_df = None
 
+MONTH_END_TARGET_COLUMNS = [
+    'SD Document', 'Billing Date', 'Sold-to Party', 'Sales Organization', 'Distribution Channel',
+    'Division', 'Billing Type', 'Document Currency', 'Net Value',
+    'Delivery', 'Material', 'Item Description', 'Profit Center'
+]
+
+month_end_source_a_df = None
+month_end_source_b_df = None
+month_end_source_c_df = None
+month_end_source_a_fields = []
+month_end_source_b_fields = []
+month_end_source_c_fields = []
+
 def split_material_description(desc):
     if pd.isna(desc):
         return pd.Series(['', '', '', '', '', ''])
@@ -174,6 +187,83 @@ def serialize_dataframe_rows(df):
                 clean_record[key] = value if isinstance(value, (str, int, float, bool)) else str(value)
         serialized.append(clean_record)
     return serialized
+
+def _month_end_prepare_report_df(source_a_df, source_b_df, source_c_df):
+    report_df = source_b_df.copy()
+
+    if 'SD Document' not in report_df.columns:
+        report_df['SD Document'] = ''
+
+    if not source_a_df.empty and {'Delivery', 'Material', 'Item Description'}.issubset(source_a_df.columns):
+        a_lookup = source_a_df[['Delivery', 'Material', 'Item Description']].drop_duplicates(subset=['Delivery'])
+        report_df = report_df.merge(
+            a_lookup,
+            how='left',
+            left_on='SD Document',
+            right_on='Delivery',
+        )
+    else:
+        if 'Delivery' not in report_df.columns:
+            report_df['Delivery'] = ''
+        if 'Material' not in report_df.columns:
+            report_df['Material'] = ''
+        if 'Item Description' not in report_df.columns:
+            report_df['Item Description'] = ''
+
+    if not source_c_df.empty and {'Material', 'Plant', 'Profit Center'}.issubset(source_c_df.columns):
+        c_lookup = source_c_df[['Material', 'Plant', 'Profit Center']].drop_duplicates(subset=['Material', 'Plant'])
+        report_df = report_df.merge(
+            c_lookup,
+            how='left',
+            left_on=['Material', 'Sales Organization'],
+            right_on=['Material', 'Plant'],
+            suffixes=('', '_c'),
+        )
+    else:
+        if 'Profit Center' not in report_df.columns:
+            report_df['Profit Center'] = ''
+
+    if 'Delivery_y' in report_df.columns:
+        report_df = report_df.drop(columns=['Delivery_y'])
+    if 'Delivery_x' in report_df.columns:
+        report_df = report_df.rename(columns={'Delivery_x': 'Delivery'})
+    if 'Plant' in report_df.columns:
+        report_df = report_df.drop(columns=['Plant'])
+    if 'Material_c' in report_df.columns:
+        report_df = report_df.drop(columns=['Material_c'])
+    if 'Item Description_c' in report_df.columns:
+        report_df = report_df.drop(columns=['Item Description_c'])
+    if 'Profit Center_c' in report_df.columns:
+        report_df = report_df.drop(columns=['Profit Center_c'])
+
+    for column in MONTH_END_TARGET_COLUMNS:
+        if column not in report_df.columns:
+            report_df[column] = ''
+
+    report_df = report_df.where(pd.notna(report_df), '')
+    return report_df
+
+def build_month_end_report_df(source_a_df, source_b_df, source_c_df):
+    report_df = _month_end_prepare_report_df(source_a_df, source_b_df, source_c_df)
+    ordered_columns = list(source_b_df.columns)
+    for column in ['Delivery', 'Material', 'Item Description', 'Profit Center']:
+        if column not in ordered_columns:
+            ordered_columns.append(column)
+    for column in MONTH_END_TARGET_COLUMNS:
+        if column not in ordered_columns:
+            ordered_columns.append(column)
+    return report_df[ordered_columns]
+
+def _month_end_upload_state(source_a_df, source_b_df, source_c_df):
+    global month_end_source_a_df, month_end_source_b_df, month_end_source_c_df
+    global month_end_source_a_fields, month_end_source_b_fields, month_end_source_c_fields
+
+    month_end_source_a_df = source_a_df
+    month_end_source_b_df = source_b_df
+    month_end_source_c_df = source_c_df
+    month_end_source_a_fields = list(source_a_df.columns)
+    month_end_source_b_fields = list(source_b_df.columns)
+    month_end_source_c_fields = list(source_c_df.columns)
 
 def build_report_row(row, source2_row, mappings, source1_df, source2_df, idx, has_source2_match):
     numeric_target_columns = {'Net Total', 'Tax Amount', 'kg', 'PC', 'Metal', 'Weight/PC'}
@@ -401,6 +491,75 @@ def save_mappings():
     mappings = request.json.get('mappings', {})
     save_mappings_to_file(mappings)
     return jsonify({'success': True, 'message': 'Mappings saved.'})
+
+@app.route('/api/month_end/upload', methods=['POST'])
+def month_end_upload():
+    if 'fileA' not in request.files or 'fileB' not in request.files or 'fileC' not in request.files:
+        return jsonify({'error': 'Please upload files A, B, and C.'}), 400
+
+    source_a_df = pd.read_excel(request.files['fileA'])
+    source_b_df = pd.read_excel(request.files['fileB'])
+    source_c_df = pd.read_excel(request.files['fileC'])
+
+    error_response = require_columns(source_a_df, ['Delivery', 'Material', 'Item Description'], '文件 A')
+    if error_response:
+        return error_response
+    error_response = require_columns(source_b_df, ['SD Document', 'Sales Organization'], '文件 B')
+    if error_response:
+        return error_response
+    error_response = require_columns(source_c_df, ['Material', 'Plant', 'Profit Center'], '文件 C')
+    if error_response:
+        return error_response
+
+    _month_end_upload_state(source_a_df, source_b_df, source_c_df)
+    report_df = build_month_end_report_df(source_a_df, source_b_df, source_c_df)
+
+    return jsonify({
+        'source_a_fields': month_end_source_a_fields,
+        'source_b_fields': month_end_source_b_fields,
+        'source_c_fields': month_end_source_c_fields,
+        'target_fields': MONTH_END_TARGET_COLUMNS,
+        'source_a_count': len(source_a_df),
+        'source_b_count': len(source_b_df),
+        'source_c_count': len(source_c_df),
+        'preview_data': serialize_dataframe_rows(report_df),
+        'total_count': len(report_df),
+    })
+
+@app.route('/api/month_end/preview', methods=['POST'])
+def month_end_preview():
+    global month_end_source_a_df, month_end_source_b_df, month_end_source_c_df
+    if month_end_source_a_df is None or month_end_source_b_df is None or month_end_source_c_df is None:
+        return jsonify({'error': 'Month-end files are not uploaded yet.'}), 400
+
+    report_df = build_month_end_report_df(month_end_source_a_df, month_end_source_b_df, month_end_source_c_df)
+    return jsonify({
+        'preview_data': serialize_dataframe_rows(report_df),
+        'total_count': len(report_df),
+    })
+
+@app.route('/api/month_end/generate', methods=['POST'])
+def month_end_generate():
+    global month_end_source_a_df, month_end_source_b_df, month_end_source_c_df
+    if month_end_source_a_df is None or month_end_source_b_df is None or month_end_source_c_df is None:
+        return jsonify({'error': 'Month-end files are not uploaded yet.'}), 400
+
+    sheet_name = request.json.get('sheet_name', 'Month End')
+    report_df = build_month_end_report_df(month_end_source_a_df, month_end_source_b_df, month_end_source_c_df)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        report_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    output.seek(0)
+    filename = f'month_end_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
 
 @app.route('/api/reset_mappings', methods=['POST'])
 def reset_mappings():
